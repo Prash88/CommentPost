@@ -25,7 +25,7 @@ export function fetchPosts() {
   };
 }
 
-export function createPost(post: Object) {
+export function createPost(post: string) {
   return function (dispatch: Function) {
     Posts.push(post);
   };

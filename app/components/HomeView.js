@@ -14,33 +14,37 @@ import {
   TextInput,
   TouchableHighlight,
 } from 'react-native';
-
+import { bindActionCreators } from 'redux';
 import _ from 'lodash';
 import { connect } from 'react-redux';
 import * as actions from '../actions';
+import Item from './Item'
 
 type State = {
-  newTodo: string,
   todoSource: Object,
 };
 
-class HomeView extends Component<void, void, State> {
+type Props = {
+  dispatch: any,
+};
 
+class HomeView extends Component<void, Props, State> {
+
+  props:Props;
   state: State;
   items: Array<any>;
 
-  constructor() {
-    super();
+  constructor(props: Props) {
+    super(props);
     this.items = [];
     this.state = {
-      newTodo: '',
       todoSource: new ListView.DataSource(
         {rowHasChanged: (row1, row2) => row1 !== row2}
       ).cloneWithRows(this.items),
     };
   }
 
-  componentWillReceiveProps(nextProps) {
+  componentWillReceiveProps(nextProps: any) {
     this.items =  _.map(nextProps.items, (post, key) => {
       return {'key': key, 'value': post};
     });
@@ -53,7 +57,7 @@ class HomeView extends Component<void, void, State> {
 
 
   componentWillMount() {
-    this.props.fetchPosts();
+    this.props.dispatch(actions.fetchPosts());
   }
 
   render() {
@@ -67,15 +71,13 @@ class HomeView extends Component<void, void, State> {
          <View style={styles.inputcontainer}>
            <TextInput
              style={styles.input}
-             onChangeText={(text) => this.setState({newTodo: text})}
-             value={this.state.newTodo}
+             blurOnSubmit={true}
+             placeholder={'Enter todo here ...'}
+             multiline={true}
+             returnKeyType={'done'}
+             enablesReturnKeyAutomatically={true}
+             onEndEditing={(event) => this._addTodo(event)}
            />
-           <TouchableHighlight
-             style={styles.button}
-             onPress={() => this._addTodo()}
-             underlayColor='#dddddd'>
-             <Text style={styles.btnText}>Add!</Text>
-           </TouchableHighlight>
          </View>
          <ListView
            enableEmptySections={true}
@@ -85,26 +87,20 @@ class HomeView extends Component<void, void, State> {
     );
   }
 
-  _addTodo() {
-    this.props.createPost(this.state.newTodo);
+  _addTodo(event: any) {
+    console.log(event.nativeEvent.text);
+    this.props.dispatch(actions.createPost(event.nativeEvent.text));
   }
 
   _removeToDo(key: string) {
-    this.props.deletePost(key);
+    this.props.dispatch(actions.deletePost(key));
   }
 
   _renderRow(rowData: Object) {
     return (
-     <TouchableHighlight
-       underlayColor='#dddddd'
-       onPress={() => this._removeToDo(rowData.key)}>
-       <View>
-         <View style={styles.row}>
-           <Text style={styles.todoText}>{rowData.value}</Text>
-         </View>
-         <View style={styles.separator}/>
-       </View>
-     </TouchableHighlight>
+     <Item name={rowData.value}
+       removable={true}
+       onRemove={() => this._removeToDo(rowData.key)} />
    );
   }
 }
@@ -174,4 +170,4 @@ function mapStateToProps(state) {
   return { items: state.posts };
 }
 
-export default connect(mapStateToProps, actions)(HomeView)
+export default connect(mapStateToProps)(HomeView)
